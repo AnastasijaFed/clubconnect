@@ -4,9 +4,10 @@ using Microsoft.EntityFrameworkCore;
 using server.Data;
 using server.Models;
 using server.Dtos;
+using Microsoft.AspNetCore.Authorization;
 
 namespace server.Controllers;
-
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class UsersController : ControllerBase
@@ -28,7 +29,7 @@ public class UsersController : ControllerBase
     };
 }
 
-
+   
     [HttpGet]
     public async Task<ActionResult<List<UserDto>>> Get([FromQuery] string? firstName, [FromQuery] string? lastName, [FromQuery] string? role)
     {
@@ -41,7 +42,7 @@ public class UsersController : ControllerBase
         }
         if (!string.IsNullOrWhiteSpace(lastName))
         {
-             query = query.Where(user => EF.Functions.ILike(user.LastName, lastName.Trim()));
+             query = query.AsNoTracking().Where(user => EF.Functions.ILike(user.LastName, lastName.Trim()));
 
         }
          if (!string.IsNullOrWhiteSpace(role))
@@ -63,16 +64,9 @@ public class UsersController : ControllerBase
         return Ok(ToDto(user));
     }
 
-    [HttpPost]
-    public async Task<IActionResult> Create(User user)
-    {
-        _db.Users.Add(user);
-        await _db.SaveChangesAsync();
-        return CreatedAtAction(nameof (GetById), new {id = user.Id}, ToDto(user));
-    }
 
     [HttpPatch("{id}")]
-    public async Task<ActionResult<User>> Patch([FromRoute] int id, [FromBody] PatchUser patch)
+    public async Task<ActionResult<UserDto>> Patch([FromRoute] int id, [FromBody] PatchUser patch)
     {
         var user = await _db.Users.FindAsync(id);
         if(user == null) return NotFound();

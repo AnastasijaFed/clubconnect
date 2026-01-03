@@ -3,16 +3,20 @@ using Microsoft.EntityFrameworkCore;
 using server.Data;
 using server.Models;
 using server.Dtos;
+using Microsoft.AspNetCore.Authorization;
+using System.ComponentModel;
+using System.Net.Sockets;
 
 namespace server.Controllers;
-
+[Authorize(Roles ="Owner,Admin")]
 [ApiController]
 [Route("api/[controller]")]
 public class ClubsController : ControllerBase
 {
     private readonly AppDbContext _db;
     public ClubsController(AppDbContext db) => _db = db;
-
+  
+    [AllowAnonymous]
     [HttpGet]
     public async Task<ActionResult<List<Club>>> Get([FromQuery] string? city, [FromQuery] string? category)
     {
@@ -34,19 +38,30 @@ public class ClubsController : ControllerBase
 
         return Ok(clubs);
     }
-
+     [AllowAnonymous]
     [HttpGet("{id}")]
     public async Task<ActionResult<Club>> GetById([FromRoute] int id)
     {
-        var club = await _db.Clubs.AsNoTracking().SingleOrDefaultAsync(c => c.Id == id);
+        var club = await _db.Clubs.AsNoTracking().SingleOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
         if (club == null) return NotFound();
         return Ok(club);
     }
 
 
     [HttpPost]
-    public async Task<IActionResult> Create(Club club)
+    public async Task<IActionResult> Create(CreateClubDto dto)
+    {   var club = new Club
     {
+            Name = dto.Name,
+            Category = dto.Category,
+            Address = dto.Address,
+            City = dto.City,
+            Phone = dto.Phone,
+            Email = dto.Email
+    };
+     
+
+
         _db.Clubs.Add(club);
         await _db.SaveChangesAsync();
 

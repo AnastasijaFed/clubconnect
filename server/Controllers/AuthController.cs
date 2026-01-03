@@ -4,10 +4,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using server.Data;
 using server.Dtos;
-using server.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Authorization;
+
+namespace server.Controllers;
+
 
 
 [ApiController]
@@ -23,8 +26,19 @@ public class AuthController : ControllerBase
         _db = db;
         _config = config;
     }
+    [Authorize]
+    [HttpGet("me")]
+    public IActionResult Me()
+    {
+        return Ok(new
+        {
+            userId = User.FindFirst("sub")?.Value,
+            email = User.FindFirst("email")?.Value,
+            role = User.FindFirst(ClaimTypes.Role)?.Value
+        });
+    }
 
-    [HttpPost]
+    [HttpPost("register")]
     public async Task<ActionResult<AuthResponse>> Register(RegisterRequest req)
     {
         var email = req.Email.Trim().ToLowerInvariant();
@@ -41,6 +55,21 @@ public class AuthController : ControllerBase
         user.PasswordHash = _hasher.HashPassword(user, req.Password);
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
+
+        var token = CreateJwt(user);
+        return Ok(new AuthResponse(token, user.Id, user.Email, user.Role, user.FirstName, user.LastName));
+    }
+
+    [HttpPost("login")]
+    public async Task<ActionResult<AuthResponse>> Login(LoginRequest req)
+    {
+        var email = req.Email.Trim().ToLowerInvariant();
+        
+        var user = await _db.Users.SingleOrDefaultAsync(u => u.Email == email && !u.IsDeleted);
+        if(user == null) return Unauthorized(new{ error= "Invalid credentials"});
+        var result = _hasher.VerifyHashedPassword(user, user.PasswordHash, req.Password);
+        if (result == PasswordVerificationResult.Failed) return Unauthorized(new { error = "Invalid credentials" });
+
 
         var token = CreateJwt(user);
         return Ok(new AuthResponse(token, user.Id, user.Email, user.Role, user.FirstName, user.LastName));
