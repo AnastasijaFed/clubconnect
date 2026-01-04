@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 
 import { isLoggedIn, logout } from "../auth";
 
@@ -17,6 +18,7 @@ export default function Navbar ({onAuthChange}){
 
             <div className="hidden sm:flex items-center gap-8">
                 <a href="#">Explore</a>
+
                  <div className="hidden lg:flex items-center text-sm gap-2 border border-gray-300 px-3 rounded-full">
                     <input className="py-1.5 w-full bg-transparent outline-none placeholder-gray-500" type="text" placeholder="Search products" />
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -26,12 +28,8 @@ export default function Navbar ({onAuthChange}){
                 </div>
                 {!loggedIn && (
                     <>
-                    <button className="cursor-pointer px-8 py-2 bg-[#4C5C8C] hover:bg-[#465a97] transition text-white rounded-full">
-                    Login
-                    </button>
-                    <button className="cursor-pointer px-8 py-2 border-2 border-[#4C5C8C] rounded-full">
-                    Register
-                    </button>
+                        <Link to="/login" className="px-8 py-2 bg-[#4C5C8C] hover:bg-[#4C5C8C] text-white rounded-full"> Login</Link>
+                        <Link to="/register?mode=register" className="px-8 py-2 border border-[#4C5C8C] text-[#4C5C8C] rounded-full"> Register</Link>
                    
                     </>
                 )}
